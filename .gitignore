@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data / Freqtrade (large artifacts; keep structure via README)
+data/*.csv
+data/*.parquet
+data/*.json
+user_data/data/
+!user_data/data/.gitkeep
+
+# Secrets
+.env
+*.key
+
+# Reports build cache
+reports/_build/
+
+# Pytest / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# uv (lockfile коммитим; локальный кэш не нужен)
+.python-version.local

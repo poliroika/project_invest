@@ -1,0 +1,1 @@
+Freqtrade lookahead analysis was not run in this version (freqtrade CLI not available in the environment used to refresh artifacts).

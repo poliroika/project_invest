@@ -1,0 +1,27 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Sync
+        run: uv sync
+        working-directory: .
+
+      - name: Tests
+        run: uv run pytest -q
+        working-directory: .
+
+      - name: Ruff
+        run: uv run ruff check src scripts tests
+        working-directory: .

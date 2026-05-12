@@ -1,0 +1,70 @@
+# Project defaults — align with technical specification (pair trading + Freqtrade)
+exchange: binance
+trading_mode: futures
+timeframe: 1h
+timerange:
+  start: "2021-01-01"
+  end: "2026-01-01"
+
+project:
+  name: "Cointegration Pair Trading"
+  initial_capital: 10000
+  base_currency: "USDT"
+
+data:
+  # Path to Freqtrade-style OHLCV or exported CSV (implementation will resolve)
+  ohlcv_root: "user_data/data"
+  min_observations: 500
+  max_nan_fraction: 0.02
+  # Download missing candles at runtime (Binance futures via CCXT); requires ``pip install ccxt``
+  auto_download: true
+
+screening:
+  correlation_min: 0.75
+  use_log_returns_for_correlation: false
+  coint_pvalue_max: 0.05
+  adf_pvalue_max: 0.05
+  half_life_min: 0.0
+  half_life_max_candles: 200
+  # Ограничить длину ряда для coint/ADF/half-life (ускорение; None = все бары)
+  max_bars_for_hypothesis_tests: 5000
+
+risk:
+  initial_capital: 10000
+  leg_capital_fraction: 0.5
+  max_position_size_pct: 0.25
+  stop_on_capital_depletion: true
+  capital_depletion_threshold: 0.0
+  max_drawdown_stop: 0.5
+  stop_after_consecutive_losses: 5
+  min_equity_to_trade: 1000
+
+strategy:
+  entry_z: 2.0
+  exit_z: 0.5
+  stop_z: 3.5
+  rolling_window: 100
+  min_train_periods: 500
+  use_log_prices: true
+  use_dynamic_beta: false
+  transaction_fee: 0.0004
+  slippage: 0.0002
+  min_signal_bars: 2
+  cooldown_bars_after_stop: 24
+  max_holding_bars: 240
+  allow_position_flip: false
+  min_spread_volatility: null
+  max_spread_volatility: null
+
+walk_forward:
+  enabled: true
+  train_months: 12
+  test_months: 3
+  step_months: 3
+  min_pairs_per_window: 1
+  max_pairs_per_window: 5
+
+paths:
+  pairs_file: "configs/pairs_top_crypto.txt"
+  results_dir: "results"
+  figures_dir: "results/figures"
