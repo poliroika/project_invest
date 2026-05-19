@@ -223,16 +223,21 @@ The screening stage selected two statistically plausible pairs: XRP/LTC and DOGE
 - **pair_screening**: `results/pair_screening_results.csv` — строк: 136, столбцов: 15.
 - **selected_pairs**: `results/selected_pairs.csv` — строк: 2, столбцов: 15.
 - **data_availability**: `results/data_availability.csv` — строк: 17, столбцов: 7.
-- **backtest_summary**: `results/backtest_summary.csv` — строк: 1, столбцов: 23.
+- **backtest_summary**: `results/backtest_summary.csv` — строк: 1, столбцов: 33.
 - **benchmark_comparison**: `results/benchmark_comparison.csv` — строк: 6, столбцов: 9.
-- **trades**: `results/trades.csv` — строк: 809, столбцов: 17.
-- **equity_curve**: `results/equity_curve.csv` — строк: 43825, столбцов: 8.
-- **spread_zscore**: `results/spread_zscore.csv` — строк: 43825, столбцов: 3.
+- **trades**: `results/trades.csv` — строк: 253, столбцов: 17.
+- **equity_curve**: `results/equity_curve.csv` — строк: 24346, столбцов: 8.
+- **spread_zscore**: `results/spread_zscore.csv` — строк: 24346, столбцов: 3.
 - **walk_forward_results**: `results/walk_forward_screening/walk_forward_results.csv` — строк: 34, столбцов: 20.
 - **walk_forward_selected_pairs**: `results/walk_forward_screening/walk_forward_selected_pairs.csv` — строк: 34, столбцов: 21.
 - **walk_forward_equity**: `results/walk_forward_screening/walk_forward_equity.csv` — строк: 74592, столбцов: 5.
 - **multi_pair_summary**: `results/multi_pair_summary.csv` — строк: 2, столбцов: 16.
-- **holdout_backtest_test**: файл отсутствует или пуст (`results/holdout/backtest_summary_test.csv`).
-- **sensitivity_summary**: файл отсутствует или пуст (`results/sensitivity/sensitivity_summary.csv`).
+- **holdout_backtest_test**: `results/holdout/backtest_summary_test.csv` — строк: 9, столбцов: 32.
+- **sensitivity_summary**: `results/sensitivity/sensitivity_summary.csv` — строк: 1, столбцов: 8.
+
+- Selected pairs: XRP/USDT:USDT / LTC/USDT:USDT, DOGE/USDT:USDT / AVAX/USDT:USDT.
+- Multi-pair backtest: DOGE/USDT:USDT / AVAX/USDT:USDT: return -30.10%, Sharpe -0.861, max DD -37.64%; XRP/USDT:USDT / LTC/USDT:USDT: return 50.42%, Sharpe 0.783, max DD -18.19%.
+- Holdout test: 9 pairs, profitable 11.11%, best ADA/USDT:USDT|NEAR/USDT:USDT (3.30%), worst BNB/USDT:USDT|ARB/USDT:USDT (-26.54%).
+- Sensitivity grid: 18 configs, median return -19.76%, profitable configs 11.11%, worst/best -33.91%/4.01%.
 
 Графики: `results/figures/` (`equity_curve.png`, `drawdown.png`, `spread_zscore.png`, и др.).

@@ -13,7 +13,7 @@ from pair_trading.backtester import build_equity_curve_dataframe, build_round_tr
 from pair_trading.benchmarks import build_benchmark_comparison_variant_b, build_six_benchmark_series
 from pair_trading.config import effective_initial_capital, load_project_config
 from pair_trading.data_loader import load_pair_close
-from pair_trading.metrics import detailed_performance, summarize_backtest
+from pair_trading.metrics import detailed_performance
 from pair_trading.plotting import (
     plot_all_standard,
     plot_benchmark_grid,
@@ -215,7 +215,6 @@ def _run_one_pair(
         timeframe=cfg.timeframe,
     )
 
-    summ = summarize_backtest(bt.equity, bt.returns, timeframe=cfg.timeframe)
     detail = detailed_performance(
         bt.equity,
         bt.returns,

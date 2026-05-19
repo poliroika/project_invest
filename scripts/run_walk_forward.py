@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 import typer
 
-from pair_trading.config import load_pairs_list, load_project_config
+from pair_trading.config import effective_initial_capital, load_pairs_list, load_project_config
 from pair_trading.data_loader import load_close_matrix, load_pair_close
 from pair_trading.preprocessing import filter_timerange_index
 from pair_trading.walk_forward import (
@@ -128,6 +128,11 @@ def main(
             step=step,
             strategy_cfg=cfg.strategy,
             timeframe=cfg.timeframe,
+            initial_capital=effective_initial_capital(cfg),
+            leg_capital_fraction=cfg.risk.leg_capital_fraction,
+            max_position_size_pct=cfg.risk.max_position_size_pct,
+            stop_on_capital_depletion=cfg.risk.stop_on_capital_depletion,
+            capital_depletion_threshold=cfg.risk.capital_depletion_threshold,
         )
 
     out = results_dir / "walk_forward_results.csv"

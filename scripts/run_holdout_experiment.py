@@ -157,6 +157,12 @@ def main(
             transaction_fee=st.transaction_fee,
             slippage=st.slippage,
         )
+        if not rt.empty and "exit_time" in rt.columns:
+            exit_ts = pd.to_datetime(rt["exit_time"], utc=True)
+            test_idx = pd.DatetimeIndex(te.index)
+            rt_test = rt[exit_ts.isin(test_idx)].copy()
+        else:
+            rt_test = pd.DataFrame(columns=rt.columns)
 
         bench = build_six_benchmark_series(
             te.iloc[:, 0], te.iloc[:, 1], strategy_cfg=st, initial_capital=ic
@@ -176,14 +182,15 @@ def main(
             bt.costs.reindex(eq_test.index).fillna(0.0),
             bt.trades,
             timeframe=cfg.timeframe,
-            initial_capital=ic,
-            round_trips=rt,
-            bt=bt,
+            initial_capital=float(eq_test.iloc[0]) if len(eq_test) else ic,
+            round_trips=rt_test,
+            bt=None,
         )
         summ_rows.append({"pair": pair_label, **det})
         bench_rows.append(cmp)
-        all_trades.append(rt.assign(pair=pair_label))
-        all_eq.append(build_equity_curve_dataframe(bt).assign(pair=pair_label))
+        all_trades.append(rt_test.assign(pair=pair_label))
+        eq_frame = build_equity_curve_dataframe(bt)
+        all_eq.append(eq_frame[eq_frame["timestamp"].isin(te.index)].assign(pair=pair_label))
 
         pfig = fig_dir / _pair_slug(a, b)
         pfig.mkdir(parents=True, exist_ok=True)

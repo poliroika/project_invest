@@ -21,6 +21,77 @@ def _first_existing(*paths: Path) -> Path:
     return paths[0]
 
 
+def _fmt_pct(value: Any) -> str:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if pd.isna(v):
+        return "n/a"
+    return f"{v:.2%}"
+
+
+def _fmt_num(value: Any, digits: int = 3) -> str:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return "n/a"
+    if pd.isna(v):
+        return "n/a"
+    return f"{v:.{digits}f}"
+
+
+def _append_selected_pairs_summary(lines: list[str], results_dir: Path) -> None:
+    selected = read_optional_csv(results_dir / "selected_pairs.csv")
+    if selected is None or selected.empty:
+        return
+    pairs = ", ".join(f"{r.asset_a} / {r.asset_b}" for r in selected.itertuples())
+    lines.append(f"- Selected pairs: {pairs}.")
+
+
+def _append_multi_pair_summary(lines: list[str], results_dir: Path) -> None:
+    multi = read_optional_csv(results_dir / "multi_pair_summary.csv")
+    if multi is None or multi.empty:
+        return
+    rows: list[str] = []
+    for r in multi.itertuples():
+        label = f"{r.asset_a} / {r.asset_b}"
+        rows.append(
+            f"{label}: return {_fmt_pct(r.total_return)}, "
+            f"Sharpe {_fmt_num(r.sharpe)}, max DD {_fmt_pct(r.max_drawdown)}"
+        )
+    lines.append(f"- Multi-pair backtest: {'; '.join(rows)}.")
+
+
+def _append_holdout_summary(lines: list[str], results_dir: Path) -> None:
+    holdout = read_optional_csv(results_dir / "holdout" / "backtest_summary_test.csv")
+    if holdout is None or holdout.empty or "total_return" not in holdout.columns:
+        return
+    total = holdout["total_return"].astype(float)
+    profitable = float((total > 0).mean())
+    best = holdout.loc[total.idxmax()]
+    worst = holdout.loc[total.idxmin()]
+    lines.append(
+        "- Holdout test: "
+        f"{len(holdout)} pairs, profitable {_fmt_pct(profitable)}, "
+        f"best {best['pair']} ({_fmt_pct(best['total_return'])}), "
+        f"worst {worst['pair']} ({_fmt_pct(worst['total_return'])})."
+    )
+
+
+def _append_sensitivity_summary(lines: list[str], results_dir: Path) -> None:
+    sens = read_optional_csv(results_dir / "sensitivity" / "sensitivity_summary.csv")
+    if sens is None or sens.empty:
+        return
+    row = sens.iloc[0]
+    lines.append(
+        "- Sensitivity grid: "
+        f"{int(row['n_configs'])} configs, median return {_fmt_pct(row['median_total_return'])}, "
+        f"profitable configs {_fmt_pct(row['pct_profitable_configs'])}, "
+        f"worst/best {_fmt_pct(row['worst_total_return'])}/{_fmt_pct(row['best_total_return'])}."
+    )
+
+
 def build_metrics_paragraph(results_dir: Path) -> str:
     """Markdown summary of key CSV artifacts (PLAN §16)."""
     lines: list[str] = ["## Автоматически сгенерированная сводка", ""]
@@ -56,6 +127,11 @@ def build_metrics_paragraph(results_dir: Path) -> str:
             lines.append(f"- **{label}**: файл отсутствует или пуст (`{p.as_posix()}`).")
             continue
         lines.append(f"- **{label}**: `{p.as_posix()}` — строк: {len(df)}, столбцов: {len(df.columns)}.")
+    lines.append("")
+    _append_selected_pairs_summary(lines, results_dir)
+    _append_multi_pair_summary(lines, results_dir)
+    _append_holdout_summary(lines, results_dir)
+    _append_sensitivity_summary(lines, results_dir)
     lines.append("")
     lines.append("Графики: `results/figures/` (`equity_curve.png`, `drawdown.png`, `spread_zscore.png`, и др.).")
     lines.append("")

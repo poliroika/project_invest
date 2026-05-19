@@ -2,14 +2,10 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import pandas as pd
-
-if TYPE_CHECKING:
-    from pair_trading.backtester import BacktestResult
-
 
 def validate_equity_curve(equity: pd.Series) -> dict[str, Any]:
     """

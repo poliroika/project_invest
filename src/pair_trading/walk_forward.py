@@ -17,8 +17,10 @@ from pair_trading.cointegration import (
 )
 from pair_trading.config import effective_initial_capital
 from pair_trading.metrics import (
+    calmar_ratio,
     detailed_performance,
     profit_factor_from_trades_df,
+    sortino_ratio,
     summarize_backtest,
     win_rate_from_trades_df,
 )
@@ -36,6 +38,11 @@ def walk_forward_backtest(
     step: int,
     strategy_cfg: Any,
     timeframe: str = "1h",
+    initial_capital: float = 10_000.0,
+    leg_capital_fraction: float = 0.5,
+    max_position_size_pct: float | None = None,
+    stop_on_capital_depletion: bool = False,
+    capital_depletion_threshold: float = 0.0,
 ) -> pd.DataFrame:
     """
     Rolling train (estimate hedge ratio) + out-of-sample test segment.
@@ -85,6 +92,13 @@ def walk_forward_backtest(
             entry_z=st.entry_z,
             exit_z=st.exit_z,
             stop_z=st.stop_z,
+            spread=spread,
+            min_signal_bars=st.min_signal_bars,
+            cooldown_bars_after_stop=st.cooldown_bars_after_stop,
+            max_holding_bars=st.max_holding_bars,
+            allow_position_flip=st.allow_position_flip,
+            min_spread_volatility=st.min_spread_volatility,
+            max_spread_volatility=st.max_spread_volatility,
         )
 
         bt = run_two_leg_backtest(
@@ -92,12 +106,13 @@ def walk_forward_backtest(
             chunk.iloc[:, 1],
             pos,
             beta,
+            initial_capital=initial_capital,
             transaction_fee=st.transaction_fee,
             slippage=st.slippage,
-            leg_capital_fraction=cfg.risk.leg_capital_fraction,
-            max_position_size_pct=cfg.risk.max_position_size_pct,
-            stop_on_capital_depletion=cfg.risk.stop_on_capital_depletion,
-            capital_depletion_threshold=cfg.risk.capital_depletion_threshold,
+            leg_capital_fraction=leg_capital_fraction,
+            max_position_size_pct=max_position_size_pct,
+            stop_on_capital_depletion=stop_on_capital_depletion,
+            capital_depletion_threshold=capital_depletion_threshold,
         )
 
         eq_all = bt.equity.reindex(chunk.index)
@@ -116,9 +131,12 @@ def walk_forward_backtest(
                 "test_end": test.index[-1].isoformat(),
                 "hedge_ratio_train": beta,
                 "test_sharpe": summ["sharpe"],
+                "test_sortino": sortino_ratio(ret_test, timeframe=timeframe),
                 "test_max_drawdown": summ["max_drawdown"],
+                "test_calmar": calmar_ratio(eq_test, timeframe=timeframe),
                 "test_cumulative_return": summ["cumulative_return"],
                 "test_final_equity": summ["final_equity"],
+                "capital_depleted": bool(bt.capital_depleted),
             }
         )
 
@@ -209,6 +227,13 @@ def walk_forward_calendar_single_pair(
             entry_z=st.entry_z,
             exit_z=st.exit_z,
             stop_z=st.stop_z,
+            spread=spread,
+            min_signal_bars=st.min_signal_bars,
+            cooldown_bars_after_stop=st.cooldown_bars_after_stop,
+            max_holding_bars=st.max_holding_bars,
+            allow_position_flip=st.allow_position_flip,
+            min_spread_volatility=st.min_spread_volatility,
+            max_spread_volatility=st.max_spread_volatility,
         )
 
         ic = effective_initial_capital(cfg)
@@ -470,9 +495,9 @@ def walk_forward_portfolio_screening(
                 bt.costs.reindex(eq_test.index).fillna(0.0),
                 bt.trades,
                 timeframe=timeframe,
-                initial_capital=ic,
+                initial_capital=float(eq_test.iloc[0]) if len(eq_test) else ic,
                 round_trips=rt_test if not rt_test.empty else None,
-                bt=bt,
+                bt=None,
             )
             pf_test = profit_factor_from_trades_df(rt_test) if not rt_test.empty else float("nan")
             fees_test = float(bt.costs.reindex(test.index).fillna(0.0).sum())

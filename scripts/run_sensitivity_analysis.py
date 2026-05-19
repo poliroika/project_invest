@@ -7,7 +7,6 @@ import itertools
 import logging
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import typer
 
@@ -30,11 +29,41 @@ FEE_GRID = (0.0002, 0.0004, 0.0008)
 SLIP_GRID = (0.0001, 0.0002, 0.0005)
 
 
+def _grid_default(values: tuple[float, ...] | tuple[int, ...]) -> str:
+    return ",".join(str(v) for v in values)
+
+
+def _parse_float_grid(value: str, *, name: str) -> tuple[float, ...]:
+    try:
+        out = tuple(float(x.strip()) for x in value.split(",") if x.strip())
+    except ValueError as exc:
+        raise typer.BadParameter(f"{name} must be a comma-separated list of numbers") from exc
+    if not out:
+        raise typer.BadParameter(f"{name} must contain at least one value")
+    return out
+
+
+def _parse_int_grid(value: str, *, name: str) -> tuple[int, ...]:
+    try:
+        out = tuple(int(x.strip()) for x in value.split(",") if x.strip())
+    except ValueError as exc:
+        raise typer.BadParameter(f"{name} must be a comma-separated list of integers") from exc
+    if not out:
+        raise typer.BadParameter(f"{name} must contain at least one value")
+    return out
+
+
 @app.command()
 def main(
     config: Path = typer.Option(Path("configs/project_config.yaml"), "--config"),
     asset_a: str = typer.Option("DOGE/USDT:USDT", "--asset-a"),
     asset_b: str = typer.Option("AVAX/USDT:USDT", "--asset-b"),
+    entry_grid: str = typer.Option(_grid_default(ENTRY_GRID), "--entry-grid"),
+    exit_grid: str = typer.Option(_grid_default(EXIT_GRID), "--exit-grid"),
+    stop_grid: str = typer.Option(_grid_default(STOP_GRID), "--stop-grid"),
+    rolling_grid: str = typer.Option(_grid_default(ROLL_GRID), "--rolling-grid"),
+    fee_grid: str = typer.Option(_grid_default(FEE_GRID), "--fee-grid"),
+    slippage_grid: str = typer.Option(_grid_default(SLIP_GRID), "--slippage-grid"),
 ) -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     cfg = load_project_config(config)
@@ -70,6 +99,12 @@ def main(
     ya = log_prices(df.iloc[:, 0])
     yb = log_prices(df.iloc[:, 1])
     beta = estimate_hedge_ratio(ya, yb)
+    entries = _parse_float_grid(entry_grid, name="entry_grid")
+    exits = _parse_float_grid(exit_grid, name="exit_grid")
+    stops = _parse_float_grid(stop_grid, name="stop_grid")
+    rolls = _parse_int_grid(rolling_grid, name="rolling_grid")
+    fees = _parse_float_grid(fee_grid, name="fee_grid")
+    slips = _parse_float_grid(slippage_grid, name="slippage_grid")
 
     out_dir = Path(cfg.paths.results_dir) / "sensitivity"
     fig_dir = out_dir / "figures"
@@ -78,7 +113,7 @@ def main(
 
     rows: list[dict[str, object]] = []
     for entry_z, exit_z, stop_z, rolling_window, fee_rate, slippage in itertools.product(
-        ENTRY_GRID, EXIT_GRID, STOP_GRID, ROLL_GRID, FEE_GRID, SLIP_GRID
+        entries, exits, stops, rolls, fees, slips
     ):
         spread, _, z = build_spread_and_zscore(
             ya,
